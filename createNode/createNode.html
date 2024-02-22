@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Node and Relationship</title>
+</head>
+
+<body>
+    <h1>Create Node and Relationship</h1>
+
+    <!-- Form for creating a new node -->
+    <h2>Create Node</h2>
+    <form id="createNodeForm">
+        <label for="nodeName">Node Name:</label><br>
+        <input type="text" id="nodeName" name="nodeName"><br><br>
+
+        <button type="submit">Create Node</button><br><br>
+    </form>
+
+    <script>
+        document.getElementById("createNodeForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            fetch('http://localhost:3000/create-node', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('nodeName').value
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    alert('Node created successfully!');
+                    document.getElementById('nodeName').value = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while creating node!');
+                    document.getElementById('nodeName').value = '';
+                });
+        });
+    </script>
+
+</body>
+
+</html>
