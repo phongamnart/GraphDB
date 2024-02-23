@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Node</title>
+</head>
+
+<body>
+    <h2>Update Node Name</h2>
+    <form id="updateNodeForm">
+        <label for="nodeName">Node Name:</label><br>
+        <input type="text" id="nodeName" name="nodeName"><br><br>
+
+        <label for="newNodeName">New Node Name:</label><br>
+        <input type="text" id="newNodeName" name="newNodeName"><br><br>
+
+        <button type="submit">Update Node Name</button>
+    </form>
+
+    <script>
+        document.getElementById("updateNodeForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const nodeName = document.getElementById('nodeName').value;
+            const newNodeName = document.getElementById('newNodeName').value;
+
+            fetch('http://localhost:3000/update-node', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: nodeName,
+                    newName: newNodeName
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Node name updated successfully!');
+                        document.getElementById('nodeName').value = '';
+                        document.getElementById('newNodeName').value = '';
+                    } else {
+                        throw new Error('Failed to update node name');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating node name!');
+                });
+        });
+    </script>
+</body>
+
+</html>

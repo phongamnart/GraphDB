@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Relationship</title>
+</head>
+
+<body>
+    <h2>Update Relationship Name</h2>
+    <form id="updateRelationshipForm">
+        <label for="fromNode">From Node:</label><br>
+        <input type="text" id="fromNode" name="fromNode"><br><br>
+
+        <label for="toNode">To Node:</label><br>
+        <input type="text" id="toNode" name="toNode"><br><br>
+
+        <label for="relationship">Relationship:</label><br>
+        <input type="text" id="relationship" name="relationship"><br><br>
+
+        <label for="attribute">Attribute:</label><br>
+        <input type="text" id="attribute" name="attribute"><br><br>
+
+        <label for="newValue">New Value:</label><br>
+        <input type="text" id="newValue" name="newValue"><br><br>
+
+        <button type="submit">Update Relationship</button>
+    </form>
+
+    <script>
+        document.getElementById("updateRelationshipForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            fetch('http://localhost:3000/update-relationship', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: document.getElementById('fromNode').value,
+                    to: document.getElementById('toNode').value,
+                    relationship: document.getElementById('relationship').value,
+                    attribute: document.getElementById('attribute').value,
+                    newValue: document.getElementById('newValue').value
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Relationship name updated successfully!');
+                        document.getElementById('fromNode').value = '';
+                        document.getElementById('toNode').value = '';
+                        document.getElementById('relationship').value = '';
+                        document.getElementById('attribute').value = '';
+                        document.getElementById('newValue').value = '';
+                    } else {
+                        throw new Error('Failed to update relationship name');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating relationship name!');
+                });
+        });
+    </script>
+</body>
+
+</html>

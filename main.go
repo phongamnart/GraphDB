@@ -8,13 +8,16 @@ import (
 )
 
 type Node struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	NewName string `json:"newName"`
 }
 
 type Relationship struct {
-	From         string `json:"from"`
-	To           string `json:"to"`
-	Relationship string `json:"relationship"`
+	From            string `json:"from"`
+	To              string `json:"to"`
+	Relationship    string `json:"relationship"`
+	Attribute		string `json:"attribute"`
+	NewValue		string `json:"newValue"`
 }
 
 func main() {
@@ -97,11 +100,56 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
+	// Delete all nodes
+	app.Delete("/delete-node-all", func(c *fiber.Ctx) error {
+		session := driver.NewSession(neo4j.SessionConfig{})
+		defer session.Close()
+
+		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+			result, err := transaction.Run(
+				"MATCH (n) DETACH DELETE n",
+				nil,
+			)
+			return result, err
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
+	// Update node name
+	app.Put("/update-node", func(c *fiber.Ctx) error {
+		var node Node
+		if err := c.BodyParser(&node); err != nil {
+			return err
+		}
+
+		session := driver.NewSession(neo4j.SessionConfig{})
+		defer session.Close()
+
+		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+			result, err := transaction.Run(
+				"MATCH (n:Node {name: $oldName}) SET n.name = $newName RETURN n",
+				map[string]interface{}{"oldName": node.Name, "newName": node.NewName},
+			)
+			return result, err
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
 	// Create a relationship
 	app.Post("/create-relation", func(c *fiber.Ctx) error {
 
-		var relation Relationship
-		if err := c.BodyParser(&relation); err != nil {
+		var rel Relationship
+		if err := c.BodyParser(&rel); err != nil {
 			return err
 		}
 
@@ -110,8 +158,8 @@ func main() {
 
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 			_, err := transaction.Run(
-				"MATCH (from:Node {name: $from}), (to:Node {name: $to}) CREATE (from)-[:`"+relation.Relationship+"`]->(to)",
-				map[string]interface{}{"from": relation.From, "to": relation.To},
+				"MATCH (from:Node {name: $from}), (to:Node {name: $to}) CREATE (from)-[:`"+rel.Relationship+"`]->(to)",
+				map[string]interface{}{"from": rel.From, "to": rel.To},
 			)
 			return nil, err
 		})
@@ -125,8 +173,8 @@ func main() {
 
 	// Delete a relationship
 	app.Delete("/delete-relation", func(c *fiber.Ctx) error {
-		var relation Relationship
-		if err := c.BodyParser(&relation); err != nil {
+		var rel Relationship
+		if err := c.BodyParser(&rel); err != nil {
 			return err
 		}
 
@@ -136,7 +184,7 @@ func main() {
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 			result, err := transaction.Run(
 				"MATCH (from:Node {name: $from})-[r]->(to:Node {name: $to}) DELETE r",
-				map[string]interface{}{"from": relation.From, "to": relation.To},
+				map[string]interface{}{"from": rel.From, "to": rel.To},
 			)
 			return result, err
 		})
@@ -147,6 +195,51 @@ func main() {
 
 		return c.SendStatus(fiber.StatusNoContent)
 	})
+
+	// Delete all relationships
+	app.Delete("/delete-all-relationships", func(c *fiber.Ctx) error {
+		session := driver.NewSession(neo4j.SessionConfig{})
+		defer session.Close()
+
+		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+			result, err := transaction.Run(
+				"MATCH ()-[r]-() DELETE r",
+				nil,
+			)
+			return result, err
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
+	app.Put("/update-relationship", func(c *fiber.Ctx) error {
+		var rel Relationship
+		if err := c.BodyParser(&rel); err != nil {
+			return err
+		}
+	
+		session := driver.NewSession(neo4j.SessionConfig{})
+		defer session.Close()
+	
+		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+			result, err := transaction.Run(
+				"MATCH (from:Node {name: $from})-[r:`" + rel.Relationship + "`]->(to:Node {name: $to}) SET r." + rel.Attribute + " = $newValue RETURN r",
+				map[string]interface{}{"from": rel.From, "to": rel.To, "newValue": rel.NewValue},
+			)
+			return result, err
+		})
+	
+		if err != nil {
+			return err
+		}
+	
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+	
 
 	log.Fatal(app.Listen(":3000"))
 }

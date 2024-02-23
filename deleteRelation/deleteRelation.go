@@ -11,6 +11,12 @@ type Node struct {
 	Name string `json:"name"`
 }
 
+type Relationship struct {
+	From         string `json:"from"`
+	To           string `json:"to"`
+	Relationship string `json:"relationship"`
+}
+
 func main() {
 	app := fiber.New()
 
@@ -31,9 +37,10 @@ func main() {
 	}
 	defer driver.Close()
 
-	app.Delete("/delete-node", func(c *fiber.Ctx) error {
-		var node Node
-		if err := c.BodyParser(&node); err != nil {
+	// Delete a relationship
+	app.Delete("/delete-relation", func(c *fiber.Ctx) error {
+		var relation Relationship
+		if err := c.BodyParser(&relation); err != nil {
 			return err
 		}
 
@@ -42,8 +49,8 @@ func main() {
 
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 			result, err := transaction.Run(
-				"MATCH (n:Node {name: $name}) DELETE n",
-				map[string]interface{}{"name": node.Name},
+				"MATCH (from:Node {name: $from})-[r]->(to:Node {name: $to}) DELETE r",
+				map[string]interface{}{"from": relation.From, "to": relation.To},
 			)
 			return result, err
 		})
@@ -55,14 +62,14 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
-	// Delete all nodes
-	app.Delete("/delete-node-all", func(c *fiber.Ctx) error {
+	// Delete all relationships
+	app.Delete("/delete-all-relationships", func(c *fiber.Ctx) error {
 		session := driver.NewSession(neo4j.SessionConfig{})
 		defer session.Close()
 
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 			result, err := transaction.Run(
-				"MATCH (n) DETACH DELETE n",
+				"MATCH ()-[r]-() DELETE r",
 				nil,
 			)
 			return result, err

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Node and Relationship</title>
+</head>
+
+<body>
+    <h2>Delete Relationship</h2>
+    <form id="deleteRelationshipForm">
+        <label for="fromNode">From Node:</label><br>
+        <input type="text" id="fromNode" name="fromNode"><br><br>
+
+        <label for="relationship">Relationship:</label><br>
+        <input type="text" id="relationship" name="relationship"><br><br>
+
+        <label for="toNode">To Node:</label><br>
+        <input type="text" id="toNode" name="toNode"><br><br>
+
+        <button type="submit">Delete Relationship</button>
+    </form>
+
+    <button id="deleteAllRelationshipsButton">Delete All Relationships</button>
+
+    <script>
+        document.getElementById("deleteRelationshipForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            fetch('http://localhost:3000/delete-relation', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: document.getElementById('fromNode').value,
+                    relationship: document.getElementById('relationship').value,
+                    to: document.getElementById('toNode').value
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Relationship deleted successfully!');
+                        document.getElementById('fromNode').value = '';
+                        document.getElementById('relationship').value = '';
+                        document.getElementById('toNode').value = '';
+                    } else {
+                        throw new Error('Failed to delete relationship');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting relationship!');
+                    document.getElementById('fromNode').value = '';
+                    document.getElementById('relationship').value = '';
+                    document.getElementById('toNode').value = '';
+
+                });
+        });
+
+        document.getElementById("deleteAllRelationshipsButton").addEventListener("click", function (event) {
+            if (confirm('Are you sure you want to delete all nodes?')) {
+                fetch('http://localhost:3000/delete-all-relationships', {
+                    method: 'DELETE'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('All relationships deleted successfully!');
+                            document.getElementById('fromNode').value = '';
+                            document.getElementById('relationship').value = '';
+                            document.getElementById('toNode').value = '';
+                        } else {
+                            throw new Error('Failed to delete all relationships');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting all relationships!');
+                        document.getElementById('fromNode').value = '';
+                        document.getElementById('relationship').value = '';
+                        document.getElementById('toNode').value = '';
+                    });
+            }
+        });
+    </script>
+</body>
+
+</html>

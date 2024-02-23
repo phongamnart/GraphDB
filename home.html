@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo4j</title>
+</head>
+<body>
+    <h1>Neo4j</h1>
+    <button id="btn1">Create Node</button>
+    <button id="btn2">Create Relationship</button>
+    <button id="btn3">Delete Node</button>
+    <button id="btn4">Delete Relationship</button>
+    <button id="btn5">Update Node</button>
+    <button id="btn6">Update Relationship</button>
+
+    <script>
+        document.getElementById("btn1").addEventListener("click", function() {
+            window.location.href = "createNode.html";
+        });
+
+        document.getElementById("btn2").addEventListener("click", function() {
+            window.location.href = "createRelation.html";
+        });
+
+        document.getElementById("btn3").addEventListener("click", function() {
+            window.location.href = "deleteNode.html";
+        });
+
+        document.getElementById("btn4").addEventListener("click", function() {
+            window.location.href = "deleteRelation.html";
+        });
+
+        document.getElementById("btn5").addEventListener("click", function() {
+            window.location.href = "updateNode.html";
+        });
+
+        document.getElementById("btn6").addEventListener("click", function() {
+            window.location.href = "updateRelation.html";
+        });
+    </script>
+</body>
+</html>

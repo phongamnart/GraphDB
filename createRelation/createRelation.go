@@ -11,6 +11,12 @@ type Node struct {
 	Name string `json:"name"`
 }
 
+type Relationship struct {
+	From         string `json:"from"`
+	To           string `json:"to"`
+	Relationship string `json:"relationship"`
+}
+
 func main() {
 	app := fiber.New()
 
@@ -24,16 +30,17 @@ func main() {
 		return c.Next()
 	})
 
-	// Connect to Neo4j
 	driver, err := neo4j.NewDriver("bolt://localhost:7687", neo4j.NoAuth())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer driver.Close()
 
-	app.Delete("/delete-node", func(c *fiber.Ctx) error {
-		var node Node
-		if err := c.BodyParser(&node); err != nil {
+	// Create a relationship
+	app.Post("/create-relation", func(c *fiber.Ctx) error {
+
+		var relation Relationship
+		if err := c.BodyParser(&relation); err != nil {
 			return err
 		}
 
@@ -41,40 +48,20 @@ func main() {
 		defer session.Close()
 
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-			result, err := transaction.Run(
-				"MATCH (n:Node {name: $name}) DELETE n",
-				map[string]interface{}{"name": node.Name},
+			_, err := transaction.Run(
+				"MATCH (from:Node {name: $from}), (to:Node {name: $to}) CREATE (from)-[:`"+relation.Relationship+"`]->(to)",
+				map[string]interface{}{"from": relation.From, "to": relation.To},
 			)
-			return result, err
+			return nil, err
 		})
 
 		if err != nil {
 			return err
 		}
 
-		return c.SendStatus(fiber.StatusNoContent)
-	})
-
-	// Delete all nodes
-	app.Delete("/delete-node-all", func(c *fiber.Ctx) error {
-		session := driver.NewSession(neo4j.SessionConfig{})
-		defer session.Close()
-
-		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-			result, err := transaction.Run(
-				"MATCH (n) DETACH DELETE n",
-				nil,
-			)
-			return result, err
-		})
-
-		if err != nil {
-			return err
-		}
-
-		return c.SendStatus(fiber.StatusNoContent)
+		return c.SendStatus(fiber.StatusCreated)
 	})
 
 	log.Fatal(app.Listen(":3000"))
-
+	
 }
