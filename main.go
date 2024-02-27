@@ -13,11 +13,11 @@ type Node struct {
 }
 
 type Relationship struct {
-	From            string `json:"from"`
-	To              string `json:"to"`
-	Relationship    string `json:"relationship"`
-	Attribute		string `json:"attribute"`
-	NewValue		string `json:"newValue"`
+	From         string `json:"from"`
+	To           string `json:"to"`
+	Relationship string `json:"relationship"`
+	Attribute    string `json:"attribute"`
+	NewValue     string `json:"newValue"`
 }
 
 func main() {
@@ -40,6 +40,58 @@ func main() {
 	}
 	defer driver.Close()
 
+	// Get all nodes and relationships
+	app.Get("/get-all-data", func(c *fiber.Ctx) error {
+		session := driver.NewSession(neo4j.SessionConfig{})
+		defer session.Close()
+
+		result, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+			nodesResult, err := transaction.Run(
+				"MATCH (n) RETURN n",
+				nil,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			relationshipsResult, err := transaction.Run(
+				"MATCH ()-[r]->() RETURN r",
+				nil,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			var nodes []interface{}
+			for nodesResult.Next() {
+				record := nodesResult.Record()
+				node := record.GetByIndex(0)
+				nodes = append(nodes, node)
+			}
+
+			var relationships []interface{}
+			for relationshipsResult.Next() {
+				record := relationshipsResult.Record()
+				relationship := record.GetByIndex(0)
+				relationships = append(relationships, relationship)
+			}
+
+			data := map[string]interface{}{
+				"nodes":         nodes,
+				"relationships": relationships,
+			}
+
+			return data, nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(result)
+	})
+
+	// Api nodes
 	// Create a new node
 	app.Post("/create-node", func(c *fiber.Ctx) error {
 		var node Node
@@ -145,6 +197,7 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
+	//Api relationships
 	// Create a relationship
 	app.Post("/create-relation", func(c *fiber.Ctx) error {
 
@@ -216,30 +269,30 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
+	// Update relationship
 	app.Put("/update-relationship", func(c *fiber.Ctx) error {
 		var rel Relationship
 		if err := c.BodyParser(&rel); err != nil {
 			return err
 		}
-	
+
 		session := driver.NewSession(neo4j.SessionConfig{})
 		defer session.Close()
-	
+
 		_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 			result, err := transaction.Run(
-				"MATCH (from:Node {name: $from})-[r:`" + rel.Relationship + "`]->(to:Node {name: $to}) SET r." + rel.Attribute + " = $newValue RETURN r",
+				"MATCH (from:Node {name: $from})-[r:`"+rel.Relationship+"`]->(to:Node {name: $to}) SET r."+rel.Attribute+" = $newValue RETURN r",
 				map[string]interface{}{"from": rel.From, "to": rel.To, "newValue": rel.NewValue},
 			)
 			return result, err
 		})
-	
+
 		if err != nil {
 			return err
 		}
-	
+
 		return c.SendStatus(fiber.StatusNoContent)
 	})
-	
 
 	log.Fatal(app.Listen(":3000"))
 }
