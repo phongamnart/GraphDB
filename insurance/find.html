@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Extreme Node</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h2>Get Extreme Node</h2>
+    <div class="form-group">
+      <label for="operationInput">Enter operation (max/min):</label>
+      <input type="text" class="form-control" id="operationInput">
+    </div>
+    <button id="getExtremeButton" class="btn btn-primary">Get Extreme Node</button>
+    <br><br>
+    <div id="resultContainer" class="border p-3"></div>
+  </div>
+
+  <script>
+    document.getElementById("getExtremeButton").addEventListener("click", function() {
+      const operation = document.getElementById("operationInput").value.trim().toLowerCase();
+      if (operation !== "max" && operation !== "min") {
+        alert("Please enter 'max' or 'min' as operation.");
+        return;
+      }
+
+      fetch(`http://localhost:3000/get-extreme-node?operation=${operation}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(data);
+          const resultContainer = document.getElementById("resultContainer");
+          resultContainer.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+        })
+        .catch(error => {
+          console.error("There was a problem with the fetch operation:", error);
+        });
+    });
+  </script>
+</body>
+</html>

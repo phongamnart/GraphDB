@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get all data</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h2>Get all data</h2>
+    <button id="getDataButton" class="btn btn-primary">Get All Data</button><br><br>
+    <div id="resultContainer" class="border p-3"></div>
+  </div>
+
+  <script>
+    document.getElementById("getDataButton").addEventListener("click", function() {
+      fetch("http://localhost:3000/get-all-data")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(data);
+          const resultContainer = document.getElementById("resultContainer");
+          resultContainer.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+        })
+        .catch(error => {
+          console.error("There was a problem with the fetch operation:", error);
+        });
+    });
+  </script>
+</body>
+</html>

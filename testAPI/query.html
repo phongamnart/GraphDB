@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neo4j API Demo</title>
+</head>
+<body>
+  <h1>Neo4j API Demo</h1>
+  <form id="queryForm">
+    <label for="queryInput">Enter Cypher Query:</label><br>
+    <textarea id="queryInput" name="query" rows="4" cols="50"></textarea><br>
+    <button type="submit">Send Query</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById('queryForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      const formData = new FormData(event.target); // Get form data
+      const query = formData.get('query'); // Get query from form
+
+      fetch('http://localhost:3000/run-query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query }) // Send query as JSON
+      })
+        .then(response => response.json())
+        .then(data => {
+          // Handle the response data here
+          console.log(data);
+          document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+        })
+        .catch(error => console.error('Error:', error));
+    });
+  </script>
+</body>
+</html>
