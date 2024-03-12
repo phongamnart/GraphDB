@@ -7,19 +7,6 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
-type Node struct {
-	Name    string `json:"name"`
-	NewName string `json:"newName"`
-}
-
-type Relationship struct {
-	From         string `json:"from"`
-	To           string `json:"to"`
-	Relationship string `json:"relationship"`
-	Attribute    string `json:"attribute"`
-	NewValue     string `json:"newValue"`
-}
-
 func main() {
 	app := fiber.New()
 
@@ -40,47 +27,34 @@ func main() {
 	}
 	defer driver.Close()
 
-	app.Get("/get-all-data", func(c *fiber.Ctx) error {
+	app.Get("/get-max-relationship-nodes", func(c *fiber.Ctx) error {
 		session := driver.NewSession(neo4j.SessionConfig{})
 		defer session.Close()
 
 		result, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-			nodesResult, err := transaction.Run(
-				"MATCH (n) RETURN n",
-				nil,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			relationshipsResult, err := transaction.Run(
-				"MATCH ()-[r]->() RETURN r",
-				nil,
-			)
+			result, err := transaction.Run(`
+				MATCH (a:Product)-[r]->(b:Option)
+				WITH MAX(r.value) AS max_value
+				MATCH (n:Product)-[r]->(m:Option)
+				WHERE r.value = max_value
+				RETURN n, m
+			`, nil)
 			if err != nil {
 				return nil, err
 			}
 
 			var nodes []interface{}
-			for nodesResult.Next() {
-				record := nodesResult.Record()
-				node := record.GetByIndex(0)
-				nodes = append(nodes, node)
+			for result.Next() {
+				record := result.Record()
+				nodeN := record.GetByIndex(0)
+				nodeM := record.GetByIndex(1)
+				nodes = append(nodes, map[string]interface{}{
+					"nodeN": nodeN,
+					"nodeM": nodeM,
+				})
 			}
 
-			var relationships []interface{}
-			for relationshipsResult.Next() {
-				record := relationshipsResult.Record()
-				relationship := record.GetByIndex(0)
-				relationships = append(relationships, relationship)
-			}
-
-			data := map[string]interface{}{
-				"nodes":         nodes,
-				"relationships": relationships,
-			}
-
-			return data, nil
+			return nodes, nil
 		})
 
 		if err != nil {
